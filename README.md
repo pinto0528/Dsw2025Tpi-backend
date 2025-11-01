@@ -25,8 +25,6 @@ Del relevamiento preliminar se identificaron los siguientes requisitos:
 - Los administradores solo pueden gestionar los productos (alta, modificación y baja) y actualizar el estado de la orden.
 - Los clientes pueden crear y consultar órdenes.
 
-[Documento completo](https://frtutneduar.sharepoint.com/:b:/s/DSW2025/ETueAd4rTe1Gilj_Yfi64RYB5oz9s2dOamxKSfMFPREbiA?e=azZcwg) 
-
 ## Alcance para el Primer Parcial
 > [!IMPORTANT]
 > Del apartado `IMPLEMENTACIÓN` (Pag. 7), completo hasta el punto `6` (inclusive)
