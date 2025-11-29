@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Dsw2025Tpi.Application.Dtos;
+﻿using Dsw2025Tpi.Application.Dtos;
+using Dsw2025Tpi.Application.Exceptions;
 using Dsw2025Tpi.Application.Interfaces;
 using Dsw2025Tpi.Domain.Entities;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 
 namespace Dsw2025Tpi.Api.Controllers
@@ -33,6 +35,38 @@ namespace Dsw2025Tpi.Api.Controllers
         {
             var response = await _orderService.GetById(id);
             return Ok(response);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAllOrders()
+        {
+            var order = await _orderService.GetAllOrders();
+            if (order == null) return NotFound();
+            return Ok(order);
+        }
+
+        [HttpPut("{id}")]
+
+        public async Task<IActionResult> UpdateOrderStatus(Guid id, [FromBody] OrderStatusModel nw)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            try
+            {
+                var order = await _orderService.UpdateOrderStatus(id, nw);
+                return Ok(order);
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+
         }
 
     }

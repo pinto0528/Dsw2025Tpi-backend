@@ -1,13 +1,14 @@
-﻿using System;
+﻿using Dsw2025Tpi.Application.Dtos;
+using Dsw2025Tpi.Application.Exceptions;
+using Dsw2025Tpi.Application.Interfaces;
+using Dsw2025Tpi.Domain.Entities;
+using Dsw2025Tpi.Domain.Enum;
+using Dsw2025Tpi.Domain.Interfaces;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Dsw2025Tpi.Domain.Interfaces;
-using Dsw2025Tpi.Domain.Entities;
-using Dsw2025Tpi.Application.Dtos;
-using Dsw2025Tpi.Application.Interfaces;
-using Dsw2025Tpi.Application.Exceptions;
 
 namespace Dsw2025Tpi.Application.Services
 {
@@ -97,6 +98,46 @@ namespace Dsw2025Tpi.Application.Services
             }
             return _entityMapper.ToResponse(order);
 
+        }
+
+        public async Task<IEnumerable<OrderModel.OrderResponse>> GetAllOrders()
+        {
+            var order = await _orderRepository.GetAll<Order>("OrderItems", "OrderItems.Product")
+            ?? throw new NotFoundException("La orden no existe.");
+
+            var result = order.Select(o =>
+            {
+                return _entityMapper.ToResponse(o);
+            });
+
+            return result;
+
+        }
+
+        public async Task<OrderModel.OrderResponse> UpdateOrderStatus(Guid id, OrderStatusModel r)
+        {
+            if (r is null) throw new ArgumentException("Request vacío.");
+
+            if (!Enum.TryParse<OrderStatus>(r.NewOrderStatus, true, out var newStatus))
+            {
+                throw new ArgumentException($"Estado inválido: '{r.NewOrderStatus}'.");
+            }
+
+            // Obtener la orden con sus relaciones para devolver el DTO completo
+            var order = await _orderRepository.First<Order>(p => p.Id == id, "OrderItems", "OrderItems.Product")
+                ?? throw new NotFoundException("La orden no existe.");
+
+            // Validar transición
+            if (!order.CanTransitionTo(newStatus))
+            {
+                throw new ArgumentException($"Transición no permitida de {order.Status} a {newStatus}.");
+            }
+
+            // Aplicar cambio y persistir
+            order.ChangeStatus(newStatus);
+            await _orderRepository.Update<Order>(order);
+
+            return _entityMapper.ToResponse(order);
         }
     }
 }

@@ -114,5 +114,12 @@ namespace Dsw2025Tpi.Application.Services
             return _entityMapper.ToResponse(product);
 
         }
+
+        public async Task<IEnumerable<ProductModel.ProductResponse>> GetAllProducts()
+        {
+            var products = await _productRepository.GetAll<Product>()
+                ?? throw new Exception("No hay productos registrados.");
+            return products.Select(p => _entityMapper.ToResponse(p));
+        }
     }
 }

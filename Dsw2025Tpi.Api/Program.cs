@@ -7,6 +7,8 @@ using Dsw2025Tpi.Data;
 using Dsw2025Tpi.Data.Repositories;
 using Dsw2025Tpi.Domain.Entities;
 using Dsw2025Tpi.Domain.Interfaces;
+using Dsw2025Tpi.Domain.Enums;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -14,24 +16,33 @@ namespace Dsw2025Tpi.Api;
 
 public class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        
-
         // Add services to the container.
-
         builder.Services.AddControllers();
 
         builder.Services.AddScoped<IProductService, ProductService>();
         builder.Services.AddScoped<IOrderService, OrderService>();
-      
+        builder.Services.AddScoped<TokenService>();
+
         builder.Services.AddScoped<IRepository, EfRepository>();
-      
+
         builder.Services.AddScoped<IEntityMapper<Product, ProductModel.ProductResponse>, ProductMapper>();
         builder.Services.AddScoped<IEntityMapper<Order, OrderModel.OrderResponse>, OrderMapper>();
 
+        builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
+        {
+            options.Password.RequireDigit = false;
+            options.Password.RequireLowercase = false;
+            options.Password.RequireNonAlphanumeric = false;
+            options.Password.RequireUppercase = false;
+            options.Password.RequiredLength = 1; // Mínimo de caracteres
+            options.Password.RequiredUniqueChars = 0;
+        })
+        .AddEntityFrameworkStores<AuthenticateContext>()
+        .AddDefaultTokenProviders();
 
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddEndpointsApiExplorer();
@@ -53,8 +64,28 @@ public class Program
             });
         });
 
+        builder.Services.AddDbContext<AuthenticateContext>(options =>
+        {
+            options.UseSqlServer(connectionString);
+        });
 
         var app = builder.Build();
+
+        // --- SEEDING DE ROLES ---
+        using (var scope = app.Services.CreateScope())
+        {
+            var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+            var roles = Enum.GetNames(typeof(Roles));
+
+            foreach (var role in roles)
+            {
+                if (!await roleManager.RoleExistsAsync(role))
+                {
+                    await roleManager.CreateAsync(new IdentityRole(role));
+                }
+            }
+        }
+        // ------------------------
 
         app.UseMiddleware<ExceptionHandler>();
 
@@ -70,7 +101,7 @@ public class Program
         app.UseAuthorization();
 
         app.MapControllers();
-        
+
         app.MapHealthChecks("/healthcheck");
 
         app.Run();
