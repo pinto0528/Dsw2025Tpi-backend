@@ -77,6 +77,7 @@ namespace Dsw2025Tpi.Api.Controllers
         }
 
         [HttpGet("users")]
+        [Authorize(Roles = "ADMIN")]
         public async Task<ActionResult<IEnumerable<UserResponseModel>>> GetAllUsuarios()
         {
             var users = await _userManager.Users.ToListAsync();

@@ -1,7 +1,8 @@
-using Microsoft.AspNetCore.Mvc;
-using Dsw2025Tpi.Domain.Interfaces;
-using Dsw2025Tpi.Domain.Entities;
 using Dsw2025Tpi.Application.Dtos;
+using Dsw2025Tpi.Domain.Entities;
+using Dsw2025Tpi.Domain.Interfaces;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using System.Reflection.Metadata.Ecma335;
 
 namespace Dsw2025Tpi.Api.Controllers
@@ -26,6 +27,7 @@ namespace Dsw2025Tpi.Api.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "ADMIN")]
         public async Task<IActionResult> CreateProduct([FromBody] ProductModel.ProductRequest request)
         {
 
@@ -39,6 +41,7 @@ namespace Dsw2025Tpi.Api.Controllers
 
 
         [HttpPut("{id:guid}")]
+        [Authorize(Roles = "ADMIN")]
         public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] ProductModel.ProductRequest request)
         {
             var response = await _productService.Update(id, request);
@@ -46,6 +49,7 @@ namespace Dsw2025Tpi.Api.Controllers
         }
 
         [HttpPatch("{id:guid}")]
+        [Authorize(Roles = "ADMIN")]
 
         public async Task<IActionResult> Disable([FromRoute] Guid id)
         {
