@@ -18,6 +18,7 @@ namespace Dsw2025Tpi.Api.Controllers
         }
 
         [HttpGet]
+
         public async Task<IActionResult> GetAllProducts()
         {
 
