@@ -23,6 +23,7 @@ namespace Dsw2025Tpi.Application.Mapper
                 entity.ShippingAddress,
                 entity.BillingAddress,
                 entity.Notes,
+                entity.Status,
                 entity.OrderItems.Select(item => new OrderItemModel.ItemResponse(
                     item.Id,
                     item.ProductId,

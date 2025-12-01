@@ -18,14 +18,17 @@ namespace Dsw2025Tpi.Api.Controllers
         private readonly UserManager<IdentityUser> _userManager;
         private readonly SignInManager<IdentityUser> _signInManager;
         private readonly TokenService _tokenService;
+        private readonly IRepository _customerRepo;
 
         public AuthenticateController(UserManager<IdentityUser> userManager,
             SignInManager<IdentityUser> signInManager,
-            TokenService jwtTokenService)
+            TokenService jwtTokenService,
+            IRepository customerRepo)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _tokenService = jwtTokenService;
+            _customerRepo = customerRepo;
         }
 
         [HttpPost("login")]
@@ -55,7 +58,15 @@ namespace Dsw2025Tpi.Api.Controllers
                 return BadRequest("Rol invalido");
             }
 
-            var user = new IdentityUser { UserName = model.Username, Email = model.Email };
+            var newId = Guid.NewGuid();
+
+            var user = new IdentityUser 
+            { 
+                Id = newId.ToString(),
+
+                UserName = model.Username, 
+                Email = model.Email 
+            };
 
             var result = await _userManager.CreateAsync(user, model.Password);
 
@@ -68,6 +79,16 @@ namespace Dsw2025Tpi.Api.Controllers
             {
                 return BadRequest(assignRoleResult.Errors);
             }
+
+            var newCustomer = new Customer
+            {
+                Id = newId,
+
+                Username = model.Username,
+                Email = model.Email,
+            };
+
+            await _customerRepo.Add(newCustomer);
 
             return Ok(new
             {

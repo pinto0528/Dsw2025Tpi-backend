@@ -75,8 +75,8 @@ public class Dsw2025TpiContext : DbContext
             if (entity is Customer customer)
             {
                 if (string.IsNullOrWhiteSpace(customer.Email))
-                    throw new Exception($"Cliente inválido. Nombre: '{customer.Name ?? "(sin nombre)"}', Email vacío o nulo.");
-                if (string.IsNullOrWhiteSpace(customer.Name))
+                    throw new Exception($"Cliente inválido. Nombre: '{customer.Username ?? "(sin nombre)"}', Email vacío o nulo.");
+                if (string.IsNullOrWhiteSpace(customer.Username))
                     throw new Exception($"Cliente inválido. Email: '{customer.Email}', Nombre vacío o nulo.");
             }
         }

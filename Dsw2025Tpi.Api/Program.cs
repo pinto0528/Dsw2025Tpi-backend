@@ -134,7 +134,7 @@ public class Program
 
         var app = builder.Build();
 
-        // --- SEEDING ---
+
         using (var scope = app.Services.CreateScope())
         {
             var services = scope.ServiceProvider;
