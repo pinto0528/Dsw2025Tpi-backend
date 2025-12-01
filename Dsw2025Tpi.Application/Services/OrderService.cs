@@ -84,6 +84,29 @@ namespace Dsw2025Tpi.Application.Services
             return _entityMapper.ToResponse(savedOrderEntity);
         }
 
+        public async Task<IEnumerable<OrderModel.OrderResponse>> GetAllOrders()
+        {
+            var orderList = await _orderRepository.GetAll<Order>("OrderItems", "OrderItems.Product")
+            ?? throw new NotFoundException("La orden no existe.");
+
+            foreach (var order in orderList)
+            {
+                foreach (var item in order.OrderItems)
+                {
+                    item.CalculateSubtotal();
+                }
+
+                order.CalculateTotalAmount();
+            }
+
+            var result = orderList.Select(o =>
+            {
+                return _entityMapper.ToResponse(o);
+            });
+
+            return result;
+
+        }
 
         public async Task<OrderModel.OrderResponse> GetById(Guid id)
         {
@@ -91,26 +114,18 @@ namespace Dsw2025Tpi.Application.Services
             {
                 throw new ArgumentException("El ID de la orden no puede ser un GUID vacío.", nameof(id));
             }
-            var order = await _orderRepository.GetById<Order>(id);
-            if (order == null)
+
+            var order = await _orderRepository.First<Order>(p => p.Id == id, "OrderItems", "OrderItems.Product")
+                ?? throw new NotFoundException("La orden no existe.");
+
+            foreach (var item in order.OrderItems)
             {
-                throw new NotFoundException($"La orden con ID {id} no fue encontrada.");
+               item.CalculateSubtotal();
             }
+
+            order.CalculateTotalAmount();
+
             return _entityMapper.ToResponse(order);
-
-        }
-
-        public async Task<IEnumerable<OrderModel.OrderResponse>> GetAllOrders()
-        {
-            var order = await _orderRepository.GetAll<Order>("OrderItems", "OrderItems.Product")
-            ?? throw new NotFoundException("La orden no existe.");
-
-            var result = order.Select(o =>
-            {
-                return _entityMapper.ToResponse(o);
-            });
-
-            return result;
 
         }
 
@@ -126,6 +141,13 @@ namespace Dsw2025Tpi.Application.Services
             // Obtener la orden con sus relaciones para devolver el DTO completo
             var order = await _orderRepository.First<Order>(p => p.Id == id, "OrderItems", "OrderItems.Product")
                 ?? throw new NotFoundException("La orden no existe.");
+
+            foreach (var item in order.OrderItems)
+            {
+                item.CalculateSubtotal();
+            }
+
+            order.CalculateTotalAmount();
 
             // Validar transición
             if (!order.CanTransitionTo(newStatus))
