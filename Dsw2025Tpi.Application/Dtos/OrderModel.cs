@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Dsw2025Tpi.Domain.Entities;
+using Dsw2025Tpi.Domain.Enum;
 using Dsw2025Tpi.Domain.Interfaces;
 
 namespace Dsw2025Tpi.Application.Dtos
@@ -27,7 +28,7 @@ namespace Dsw2025Tpi.Application.Dtos
                     BillingAddress = BillingAddress,
                     Notes = Notes,
                     OrderItems = OrderItems.Select(item => item.ToEntity()).ToList(),
-
+                    
                 };
                 return order;
             }
@@ -39,9 +40,13 @@ namespace Dsw2025Tpi.Application.Dtos
             string ShippingAddress,
             string BillingAddress,
             string Notes,
+            OrderStatus Status,
             List<OrderItemModel.ItemResponse> OrderItems,
             decimal TotalAmount
-            );
+            )
+        {
+            public string StatusDescription => Status.ToString();
+        }
 
     }
 }
