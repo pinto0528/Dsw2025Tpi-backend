@@ -24,8 +24,18 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        // Add services to the container.
         builder.Services.AddControllers();
+
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("AllowReactApp", policy =>
+            {
+                policy.WithOrigins("http://localhost:5173")
+                      .AllowAnyMethod()
+                      .AllowAnyHeader();
+            });
+        });
+        // -------------------------------------------
 
         builder.Services.AddScoped<IProductService, ProductService>();
         builder.Services.AddScoped<IOrderService, OrderService>();
@@ -42,7 +52,7 @@ public class Program
             options.Password.RequireLowercase = false;
             options.Password.RequireNonAlphanumeric = false;
             options.Password.RequireUppercase = false;
-            options.Password.RequiredLength = 1; // Mínimo de caracteres
+            options.Password.RequiredLength = 1;
             options.Password.RequiredUniqueChars = 0;
         })
         .AddEntityFrameworkStores<AuthenticateContext>()
@@ -71,7 +81,6 @@ public class Program
             };
         });
 
-        // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddHealthChecks();
 
@@ -79,7 +88,6 @@ public class Program
         {
             c.SwaggerDoc("v1", new OpenApiInfo { Title = "Dsw2025Tpi API", Version = "v1" });
 
-            // Definir el esquema de seguridad (Bearer JWT)
             c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {
                 Description = "JWT Authorization header using the Bearer scheme. \r\n\r\n Enter 'Bearer' [space] and then your token in the text input below.\r\n\r\nExample: \"Bearer 12345abcdef\"",
@@ -113,11 +121,9 @@ public class Program
 
         var connectionString = $"Server={dbServer};Database={dbName};Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True";
 
-        // Configurar la cadena de conexión a la base de datos
         builder.Services.AddDbContext<Dsw2025TpiContext>(options =>
         {
             options.UseSqlServer(connectionString);
-            // ELIMINADO: options.UseSeeding (No existe en .NET 8)
         });
 
         builder.Services.AddDbContext<AuthenticateContext>(options =>
@@ -125,16 +131,16 @@ public class Program
             options.UseSqlServer(connectionString);
         });
 
+
         var app = builder.Build();
 
-        // --- SEEDING DE ROLES Y DATOS ---
+        // --- SEEDING ---
         using (var scope = app.Services.CreateScope())
         {
             var services = scope.ServiceProvider;
             var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
             var roles = Enum.GetNames(typeof(Roles));
 
-            // 1. Roles
             foreach (var role in roles)
             {
                 if (!await roleManager.RoleExistsAsync(role))
@@ -143,24 +149,20 @@ public class Program
                 }
             }
 
-            // 2. Datos (Movido aquí para .NET 8)
             try
             {
                 var context = services.GetRequiredService<Dsw2025TpiContext>();
-                // Asegúrate de que tu método Seedwork sea público en el DbContext
                 context.Seedwork<Customer>("Sources\\customers.json");
             }
             catch (Exception ex)
             {
-                // Loguear error si el seeding falla (opcional)
                 Console.WriteLine($"Error durante el seeding: {ex.Message}");
             }
         }
-        // ------------------------
+        // ----------------
 
         app.UseMiddleware<ExceptionHandler>();
 
-        // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();
@@ -169,12 +171,13 @@ public class Program
 
         app.UseHttpsRedirection();
 
-        app.UseAuthentication();
+        app.UseCors("AllowReactApp");
+        // ----------------------------------
 
+        app.UseAuthentication();
         app.UseAuthorization();
 
         app.MapControllers();
-
         app.MapHealthChecks("/healthcheck");
 
         app.Run();
