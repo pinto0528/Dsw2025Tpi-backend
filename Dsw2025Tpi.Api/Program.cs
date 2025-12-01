@@ -117,10 +117,7 @@ public class Program
         builder.Services.AddDbContext<Dsw2025TpiContext>(options =>
         {
             options.UseSqlServer(connectionString);
-            options.UseSeeding((c, t) =>
-            {
-                ((Dsw2025TpiContext)c).Seedwork<Customer>("Sources\\customers.json");
-            });
+            // ELIMINADO: options.UseSeeding (No existe en .NET 8)
         });
 
         builder.Services.AddDbContext<AuthenticateContext>(options =>
@@ -130,18 +127,33 @@ public class Program
 
         var app = builder.Build();
 
-        // --- SEEDING DE ROLES ---
+        // --- SEEDING DE ROLES Y DATOS ---
         using (var scope = app.Services.CreateScope())
         {
-            var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+            var services = scope.ServiceProvider;
+            var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
             var roles = Enum.GetNames(typeof(Roles));
 
+            // 1. Roles
             foreach (var role in roles)
             {
                 if (!await roleManager.RoleExistsAsync(role))
                 {
                     await roleManager.CreateAsync(new IdentityRole(role));
                 }
+            }
+
+            // 2. Datos (Movido aquí para .NET 8)
+            try
+            {
+                var context = services.GetRequiredService<Dsw2025TpiContext>();
+                // Asegúrate de que tu método Seedwork sea público en el DbContext
+                context.Seedwork<Customer>("Sources\\customers.json");
+            }
+            catch (Exception ex)
+            {
+                // Loguear error si el seeding falla (opcional)
+                Console.WriteLine($"Error durante el seeding: {ex.Message}");
             }
         }
         // ------------------------
